@@ -56,14 +56,12 @@ export default async function PseoPage(props: Props) {
         <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-grow container mx-auto py-12 px-4 max-w-4xl">
-                <h1 className="text-4xl font-bold mb-8">{data.title}</h1>
-
                 {/* 
-                   Tip: Use @tailwindcss/typography plugin for nice styling of raw HTML.
-                   Add 'prose' class to the container.
+                   The title h1 is already included in contentHtml from Alstra,
+                   so we don't render a separate h1 to avoid duplicates.
                 */}
                 <div
-                    className="prose prose-lg dark:prose-invert max-w-none"
+                    className="pseo-content prose prose-lg dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={{ __html: data.contentHtml }}
                 />
 

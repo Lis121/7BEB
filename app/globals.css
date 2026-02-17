@@ -68,6 +68,64 @@
   }
 }
 
+/* pSEO Content Styles */
+.dark .pseo-content {
+  color: #ffffff;
+}
+
+.dark .pseo-content h1,
+.dark .pseo-content h2,
+.dark .pseo-content h3,
+.dark .pseo-content h4,
+.dark .pseo-content h5,
+.dark .pseo-content h6 {
+  color: #ffffff;
+}
+
+.dark .pseo-content p,
+.dark .pseo-content li,
+.dark .pseo-content span {
+  color: #e5e5e5;
+}
+
+/* Fix text inside light/white background cards (e.g. Key Facts) */
+.dark .pseo-content div[style*="background"],
+.dark .pseo-content .card,
+.dark .pseo-content table,
+.dark .pseo-content [class*="fact"],
+.dark .pseo-content [class*="card"] {
+  color: #111111;
+}
+
+.dark .pseo-content div[style*="background"] p,
+.dark .pseo-content div[style*="background"] span,
+.dark .pseo-content div[style*="background"] li,
+.dark .pseo-content div[style*="background"] strong,
+.dark .pseo-content div[style*="background"] b {
+  color: #111111;
+}
+
+/* Force dark text on any element with explicit white/light bg */
+.dark .pseo-content [style*="background-color: white"],
+.dark .pseo-content [style*="background-color: #fff"],
+.dark .pseo-content [style*="background-color: #ffffff"],
+.dark .pseo-content [style*="background-color: rgb(255"],
+.dark .pseo-content [style*="background: white"],
+.dark .pseo-content [style*="background: #fff"],
+.dark .pseo-content [style*="background: #ffffff"] {
+  color: #111111 !important;
+}
+
+.dark .pseo-content [style*="background-color: white"] *,
+.dark .pseo-content [style*="background-color: #fff"] *,
+.dark .pseo-content [style*="background-color: #ffffff"] *,
+.dark .pseo-content [style*="background-color: rgb(255"] *,
+.dark .pseo-content [style*="background: white"] *,
+.dark .pseo-content [style*="background: #fff"] *,
+.dark .pseo-content [style*="background: #ffffff"] * {
+  color: #111111 !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
