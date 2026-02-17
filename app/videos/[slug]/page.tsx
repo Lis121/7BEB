@@ -1,4 +1,6 @@
-import { Navbar } from "@/components/navbar";
+
+export const runtime = 'edge';
+
 import { Footer } from "@/components/footer";
 import { Calendar, Share2, Clock } from "lucide-react";
 import { notFound } from "next/navigation";
