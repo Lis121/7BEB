@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   title: "7BEB | Breaking News & Video Coverage",
   description: "7BEB - Your trusted source for the latest news and video coverage from across the US and the world.",
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({
