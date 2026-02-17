@@ -1,35 +1,38 @@
-import { MetadataRoute } from "next";
+import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = "https://your-domain.com"; // Replace with actual domain
+    const baseUrl = 'https://7beb.com'
 
-    // Static routes
-    const routes = [
-        "",
-        "/politics",
-        "/tech",
-        "/business",
-        "/entertainment",
-    ].map((route) => ({
-        url: `${baseUrl}${route}`,
-        lastModified: new Date(),
-        changeFrequency: "daily" as const,
-        priority: route === "" ? 1 : 0.8,
-    }));
-
-    // In a real app, you would fetch dynamic slugs here and map them
-    const videos = [
-        "tech-startup-boom",
-        "mars-mission",
-        "market-update",
-        "urban-farming",
-        "senate-hearing",
-    ].map((slug) => ({
-        url: `${baseUrl}/videos/${slug}`,
-        lastModified: new Date(),
-        changeFrequency: "weekly" as const,
-        priority: 0.6,
-    }));
-
-    return [...routes, ...videos];
+    return [
+        {
+            url: baseUrl,
+            lastModified: new Date(),
+            changeFrequency: 'daily',
+            priority: 1,
+        },
+        {
+            url: `${baseUrl}/politics`,
+            lastModified: new Date(),
+            changeFrequency: 'daily',
+            priority: 0.8,
+        },
+        {
+            url: `${baseUrl}/tech`,
+            lastModified: new Date(),
+            changeFrequency: 'daily',
+            priority: 0.8,
+        },
+        {
+            url: `${baseUrl}/business`,
+            lastModified: new Date(),
+            changeFrequency: 'daily',
+            priority: 0.8,
+        },
+        {
+            url: `${baseUrl}/entertainment`,
+            lastModified: new Date(),
+            changeFrequency: 'daily',
+            priority: 0.8,
+        },
+    ]
 }
