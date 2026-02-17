@@ -1,4 +1,3 @@
-```typescript
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Calendar, Share2, Clock } from "lucide-react";
