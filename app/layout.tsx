@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
+      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`} suppressHydrationWarning>
         <Script
           strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=G-GZ1MYL8QC9"
