@@ -3,10 +3,6 @@ const PROJECT_ID = "b17364ef-337e-4134-9b5e-2ab36c97e022";
 
 // --- YouTube helpers ---
 
-/**
- * Extract the first YouTube video ID (11 chars) from HTML content.
- * Handles embed, watch, youtu.be and youtube-nocookie URLs.
- */
 export function getYoutubeVideoId(html: string): string | null {
     const patterns = [
         /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
@@ -14,7 +10,6 @@ export function getYoutubeVideoId(html: string): string | null {
         /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
         /youtube-nocookie\.com\/embed\/([a-zA-Z0-9_-]{11})/,
     ];
-
     for (const pattern of patterns) {
         const match = html.match(pattern);
         if (match) return match[1];
@@ -22,18 +17,16 @@ export function getYoutubeVideoId(html: string): string | null {
     return null;
 }
 
-/**
- * Build the best-quality YouTube thumbnail URL for a given video ID.
- */
 export function getBestYoutubeThumbnail(videoId: string): string {
     return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 }
 
-// --- Alstra API types ---
+// --- Types ---
 
-type SitemapEntry = {
-    url: string;
-    lastModified?: string;
+type AlstraPage = {
+    slug: string;
+    title: string;
+    type: string;
 };
 
 export type WatchPageWithThumbnail = {
@@ -45,7 +38,7 @@ export type WatchPageWithThumbnail = {
     date: string;
 };
 
-// --- Fetching logic ---
+// --- Helpers ---
 
 function shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
@@ -56,89 +49,63 @@ function shuffleArray<T>(array: T[]): T[] {
     return shuffled;
 }
 
-function slugToTitle(url: string): string {
-    const path = new URL(url).pathname;
-    const segments = path.split('/').filter(Boolean);
-    const lastSegment = segments[segments.length - 1] || '';
-    return lastSegment
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-}
+const PLACEHOLDER = "https://placehold.co/600x400/222/333?text=Video";
 
 /**
  * Fetch `count` random /watch pages with their YouTube thumbnails.
  *
- * 1. Fetches all watch-page URLs from the sitemap API.
- * 2. Shuffles and picks `count` pages.
- * 3. Fetches each page's contentHtml (batched 5 at a time).
- * 4. Extracts the YouTube video ID and builds a thumbnail URL.
+ * Uses the pages API (1 call) to get the list, then fetches content
+ * for each selected page to extract the YouTube video ID.
  */
 export async function fetchWatchPagesWithThumbnails(
     count: number
 ): Promise<WatchPageWithThumbnail[]> {
-    const PLACEHOLDER = "https://placehold.co/600x400/222/333?text=Video";
-
     try {
-        // Step 1 – get all watch-page URLs from sitemap
-        const res = await fetch(
-            `${SAAS_API_URL}/api/public/sitemap?projectId=${PROJECT_ID}&format=json&limit=5000&page=1`,
-            { cache: "no-store" }
+        // Step 1 – get all pages from the pages API (single request)
+        const listRes = await fetch(
+            `${SAAS_API_URL}/api/public/pages?projectId=${PROJECT_ID}&type=pseo&limit=300`,
+            { next: { revalidate: 60 } }
         );
-        if (!res.ok) return [];
+        if (!listRes.ok) {
+            console.error("Alstra pages API error:", listRes.status);
+            return [];
+        }
 
-        const data: SitemapEntry[] = await res.json();
-        const watchPages = data.filter((entry) => {
-            const path = new URL(entry.url).pathname;
-            return path.startsWith("/watch/");
-        });
+        const listData = await listRes.json();
+        const allPages: AlstraPage[] = listData.pages || [];
 
-        if (watchPages.length === 0) return [];
+        if (allPages.length === 0) return [];
 
         // Step 2 – shuffle & pick
-        const selected = shuffleArray(watchPages).slice(0, count);
+        const selected = shuffleArray(allPages).slice(0, count);
 
-        // Step 3 – fetch content in batches of 5
-        const BATCH_SIZE = 5;
-        const results: WatchPageWithThumbnail[] = [];
+        // Step 3 – fetch content for each page (all in parallel)
+        const results = await Promise.all(
+            selected.map(async (page): Promise<WatchPageWithThumbnail> => {
+                try {
+                    const contentRes = await fetch(
+                        `${SAAS_API_URL}/api/public/content?projectId=${PROJECT_ID}&slug=${page.slug}`,
+                        { next: { revalidate: 60 } }
+                    );
 
-        for (let i = 0; i < selected.length; i += BATCH_SIZE) {
-            const batch = selected.slice(i, i + BATCH_SIZE);
-
-            const batchResults = await Promise.all(
-                batch.map(async (entry) => {
-                    const path = new URL(entry.url).pathname;
-                    // slug is everything after /watch/
-                    const slug = path.replace(/^\/watch\//, "");
-
-                    try {
-                        const contentRes = await fetch(
-                            `${SAAS_API_URL}/api/public/content?projectId=${PROJECT_ID}&slug=${slug}`,
-                            { cache: "no-store" }
-                        );
-
-                        if (!contentRes.ok) {
-                            return buildResult(entry, slug, PLACEHOLDER);
-                        }
-
-                        const pageData = await contentRes.json();
-                        const html: string = pageData.contentHtml || "";
-
-                        // Step 4 – extract video ID & build thumbnail
-                        const videoId = getYoutubeVideoId(html);
-                        const thumbnail = videoId
-                            ? getBestYoutubeThumbnail(videoId)
-                            : PLACEHOLDER;
-
-                        return buildResult(entry, slug, thumbnail, pageData.title);
-                    } catch {
-                        return buildResult(entry, slug, PLACEHOLDER);
+                    if (!contentRes.ok) {
+                        return buildResult(page, PLACEHOLDER);
                     }
-                })
-            );
 
-            results.push(...batchResults);
-        }
+                    const pageData = await contentRes.json();
+                    const html: string = pageData.contentHtml || "";
+                    const videoId = getYoutubeVideoId(html);
+                    const thumbnail = videoId
+                        ? getBestYoutubeThumbnail(videoId)
+                        : PLACEHOLDER;
+
+                    return buildResult(page, thumbnail, pageData.title);
+                } catch (err) {
+                    console.error(`Content fetch failed for ${page.slug}:`, err);
+                    return buildResult(page, PLACEHOLDER);
+                }
+            })
+        );
 
         return results;
     } catch (error) {
@@ -148,34 +115,31 @@ export async function fetchWatchPagesWithThumbnails(
 }
 
 function buildResult(
-    entry: SitemapEntry,
-    slug: string,
+    page: AlstraPage,
     thumbnail: string,
     apiTitle?: string
 ): WatchPageWithThumbnail {
-    const path = new URL(entry.url).pathname;
-    const segments = path.split("/").filter(Boolean);
-    // category is the segment after "watch", e.g. /watch/knives/... → knives
-    const rawCategory = segments.length > 1 ? segments[1] : "General";
+    const slugParts = page.slug.split("/").filter(Boolean);
+    // category is the first segment, e.g. robert-duvall/some-page → Robert Duvall
+    const rawCategory = slugParts.length > 0 ? slugParts[0] : "General";
     const category = rawCategory
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
 
-    const date = entry.lastModified
-        ? new Date(entry.lastModified).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        })
-        : "";
+    // title from the last slug segment as fallback
+    const lastSegment = slugParts[slugParts.length - 1] || "";
+    const fallbackTitle = lastSegment
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
 
     return {
-        slug,
-        url: entry.url,
-        title: apiTitle || slugToTitle(entry.url),
+        slug: page.slug,
+        url: `https://7beb.com/watch/${page.slug}`,
+        title: apiTitle || page.title || fallbackTitle,
         thumbnail,
         category,
-        date,
+        date: "",
     };
 }
