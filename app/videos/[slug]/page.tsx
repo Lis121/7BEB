@@ -3,7 +3,7 @@ import { Footer } from "@/components/footer";
 import { Calendar, Share2, Clock } from "lucide-react";
 import { notFound } from "next/navigation";
 
-export const runtime = 'edge';
+
 
 export default async function VideoDate({ params }: { params: Promise<{ slug: string }> }) {
     // In a real app, fetch data based on params.slug
@@ -64,12 +64,12 @@ export default async function VideoDate({ params }: { params: Promise<{ slug: st
                                     <div className="relative w-40 aspect-video bg-muted rounded-md overflow-hidden flex-shrink-0">
                                         <img src={`https://images.unsplash.com/photo-${i === 1 ? '1497215728101-856f4ea42174' : '1451187580459-43490279c0fa'}?q=80&w=400&auto=format&fit=crop`} className="object-cover w-full h-full group-hover:scale-105 transition-transform" alt="Thumbnail" />
                                     </div >
-    <div>
-        <h4 className="font-medium line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-            Global Markets React to Fed Interest Rate Decision
-        </h4>
-        <p className="text-xs text-muted-foreground mt-1">Business • 2h ago</p>
-    </div>
+                                    <div>
+                                        <h4 className="font-medium line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                                            Global Markets React to Fed Interest Rate Decision
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-1">Business • 2h ago</p>
+                                    </div>
                                 </div >
                             ))}
                         </div >
@@ -78,7 +78,7 @@ export default async function VideoDate({ params }: { params: Promise<{ slug: st
                 </div >
             </main >
 
-    <Footer />
+            <Footer />
         </div >
     );
 }
