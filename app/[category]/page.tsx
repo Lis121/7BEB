@@ -3,6 +3,8 @@ import { Footer } from "@/components/footer";
 import { VideoCard } from "@/components/video-card";
 import { notFound } from "next/navigation";
 
+
+
 // Mock Data (In a real app, this would come from a database)
 const CATEGORY_VIDEOS = [
     {

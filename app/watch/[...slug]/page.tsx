@@ -6,6 +6,8 @@ import { AlstraCta } from "@/components/alstra-cta";
 const SAAS_API_URL = "https://www.alstras.com";
 const PROJECT_ID = "b17364ef-337e-4134-9b5e-2ab36c97e022";
 
+export const runtime = 'edge';
+
 type Props = {
     params: Promise<{ slug: string[] }>;
 };

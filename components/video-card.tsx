@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface VideoCardProps {
@@ -23,38 +22,34 @@ export function VideoCard({
     className,
 }: VideoCardProps) {
     return (
-        <Link href={`/videos/${slug}`} className={cn("group block space-y-3", className)}>
-            <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
+        <Link href={`/videos/${slug}`} className={cn("group block bg-card rounded-lg overflow-hidden border border-border/50 hover:border-primary/50 transition-colors", className)}>
+            <div className="relative aspect-video overflow-hidden bg-muted">
                 <Image
                     src={thumbnail}
                     alt={title}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-
-                {/* Play Button Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-background/80 backdrop-blur-sm p-3 rounded-full text-foreground shadow-lg">
-                        <Play className="h-6 w-6 fill-current" />
-                    </div>
-                </div>
-
-                {/* Duration Badge */}
-                <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded font-medium">
-                    {duration}
-                </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             </div>
 
-            <div className="space-y-1">
-                <div className="flex items-center space-x-2 text-xs font-medium text-muted-foreground">
-                    <span className="text-primary">{category}</span>
-                    <span>•</span>
-                    <span>{timestamp}</span>
-                </div>
-                <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors line-clamp-2">
+            <div className="p-4 space-y-4">
+                <h3 className="font-bold text-lg leading-tight uppercase group-hover:text-primary transition-colors line-clamp-2 min-h-[3rem]">
                     {title}
                 </h3>
+
+                <div className="h-px bg-border/50 w-full" />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Category</p>
+                        <p className="text-sm font-medium text-foreground">{category}</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Published</p>
+                        <p className="text-sm font-medium text-foreground">{timestamp}</p>
+                    </div>
+                </div>
             </div>
         </Link>
     );
