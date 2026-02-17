@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Menu, X, Play } from "lucide-react";
+import { Search, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -12,11 +12,11 @@ export function Navbar() {
         <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex items-center space-x-2">
-                    <div className="bg-primary text-primary-foreground p-1 rounded">
-                        <Play className="h-5 w-5 fill-current" />
-                    </div>
-                    <span className="font-bold text-xl tracking-tight">7BEB</span>
+                <Link href="/" className="flex items-center space-x-2 group">
+                    <span className="font-black text-2xl tracking-tighter uppercase relative inline-block">
+                        7BEB
+                        <span className="absolute -top-1 -right-3 h-2 w-2 rounded-full bg-primary" />
+                    </span>
                 </Link>
 
                 {/* Desktop Navigation */}

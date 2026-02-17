@@ -75,5 +75,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
     ]
 
-    return [...myPages, ...pseoPages];
+    // Filter out duplicates (if pSEO returns pages we already defined manually)
+    const myUrls = new Set(myPages.map((page) => page.url));
+    const filteredPseoPages = pseoPages.filter((page) => !myUrls.has(page.url));
+
+    return [...myPages, ...filteredPseoPages];
 }
