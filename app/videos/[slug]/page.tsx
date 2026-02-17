@@ -1,4 +1,4 @@
-
+import { Navbar } from "@/components/navbar";
 export const runtime = 'edge';
 
 import { Footer } from "@/components/footer";
