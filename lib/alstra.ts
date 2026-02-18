@@ -216,12 +216,3 @@ function buildResult(
         date: apiDate || "", // Use provided date or empty string
     };
 }
-// Wait, buildResult doesn't have access to pageData.updatedAt unless passed.
-// hydratePagesWithThumbnails passes pageData.title.
-// I need to update buildResult signature to accept date/timestamp.
-
-// Or I can just pass it as 'date'.
-// In hydratePagesWithThumbnails:
-// const pageData = await contentRes.json();
-// ...
-// return buildResult(page, thumbnail, pageData.title, pageData.updatedAt);
