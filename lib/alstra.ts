@@ -1,5 +1,6 @@
 import { AlstraPage, WatchPageWithThumbnail } from "./types";
 import { categorizePage } from "./classification";
+import Fuse from "fuse.js";
 
 const SAAS_API_URL = "https://www.alstras.com";
 const PROJECT_ID = "b17364ef-337e-4134-9b5e-2ab36c97e022";
@@ -154,6 +155,30 @@ export async function fetchCategoryPages(category: string, limit: number, offset
     // Slice for pagination
     const selected = reversed.slice(offset, offset + limit);
     return hydratePagesWithThumbnails(selected);
+}
+
+/**
+ * Search pages using Fuse.js for fuzzy matching.
+ */
+export async function searchPages(query: string, limit: number = 20): Promise<WatchPageWithThumbnail[]> {
+    const allPages = await fetchAllPages();
+
+    if (!query) return [];
+
+    const fuse = new Fuse(allPages, {
+        keys: [
+            { name: 'title', weight: 0.7 },
+            { name: 'slug', weight: 0.3 }
+        ],
+        includeScore: true,
+        threshold: 0.4, // 0.0 = exact match, 1.0 = match anything. 0.4 is good for typos.
+        minMatchCharLength: 3,
+    });
+
+    const results = fuse.search(query);
+    const topResults = results.slice(0, limit).map(result => result.item);
+
+    return hydratePagesWithThumbnails(topResults);
 }
 
 /**
