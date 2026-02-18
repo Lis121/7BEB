@@ -80,22 +80,6 @@ export function WatchCard({
                     {title}
                 </h3>
 
-                <div className="h-px bg-border/50 w-full" />
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">
-                            Category
-                        </p>
-                        <p className="text-sm font-medium text-foreground">{category}</p>
-                    </div>
-                    <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">
-                            Published
-                        </p>
-                        <p className="text-sm font-medium text-foreground">{date}</p>
-                    </div>
-                </div>
             </div>
         </Link>
     );
