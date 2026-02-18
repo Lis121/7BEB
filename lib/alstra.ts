@@ -23,7 +23,7 @@ export function getBestYoutubeThumbnail(videoId: string): string {
 
 // --- Types ---
 
-type AlstraPage = {
+export type AlstraPage = {
     slug: string;
     title: string;
     type: string;
@@ -50,6 +50,40 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 const PLACEHOLDER = "https://placehold.co/600x400/222/333?text=Video";
+
+/**
+ * Fetch ALL pages from the API (paginated).
+ * Useful for building search indexes or categorization.
+ */
+export async function fetchAllPages(): Promise<AlstraPage[]> {
+    let allPages: AlstraPage[] = [];
+    let page = 1;
+
+    try {
+        while (true) {
+            const res = await fetch(
+                `${SAAS_API_URL}/api/public/pages?projectId=${PROJECT_ID}&type=pseo&limit=1000&page=${page}`,
+                { next: { revalidate: 3600 } }
+            );
+
+            if (!res.ok) break;
+
+            const data = await res.json();
+            const pages: AlstraPage[] = data.pages || [];
+
+            if (pages.length === 0) break;
+
+            allPages = [...allPages, ...pages];
+
+            if (pages.length < 1000) break;
+            page++;
+        }
+    } catch (error) {
+        console.error("Failed to fetch all pages:", error);
+    }
+
+    return allPages;
+}
 
 /**
  * Fetch `count` random /watch pages with their YouTube thumbnails.

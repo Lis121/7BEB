@@ -17,8 +17,21 @@ export function Footer() {
                 <div className="w-12 h-px bg-border/60" />
 
                 {/* Links & Copyright */}
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {/* Links & Copyright */}
+                <div className="flex flex-col md:flex-row items-center justify-between w-full gap-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     <p>&copy; {new Date().getFullYear()} 7BEB. All rights reserved.</p>
+
+                    <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                        <a href="/politics" className="hover:text-primary transition-colors">Politics</a>
+                        <a href="/business" className="hover:text-primary transition-colors">Business</a>
+                        <a href="/tech" className="hover:text-primary transition-colors">Tech</a>
+                        <a href="/science" className="hover:text-primary transition-colors">Science</a>
+                        <a href="/health" className="hover:text-primary transition-colors">Health</a>
+                        <a href="/sports" className="hover:text-primary transition-colors">Sports</a>
+                        <a href="/entertainment" className="hover:text-primary transition-colors">Entertainment</a>
+                        <a href="/world" className="hover:text-primary transition-colors">World</a>
+                    </nav>
+
                     <nav className="flex gap-6">
                         <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
                         <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>

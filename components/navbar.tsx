@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { SearchBar } from "@/components/search-bar";
 
 export function Navbar() {
     return (
@@ -13,11 +13,36 @@ export function Navbar() {
                     </span>
                 </Link>
 
+                {/* Navigation */}
+                <div className="hidden md:flex items-center space-x-4 text-sm font-medium uppercase tracking-wider">
+                    <Link href="/politics" className="hover:text-primary transition-colors">
+                        Politics
+                    </Link>
+                    <Link href="/business" className="hover:text-primary transition-colors">
+                        Business
+                    </Link>
+                    <Link href="/tech" className="hover:text-primary transition-colors">
+                        Tech
+                    </Link>
+                    <Link href="/science" className="hover:text-primary transition-colors">
+                        Science
+                    </Link>
+                    <Link href="/health" className="hover:text-primary transition-colors">
+                        Health
+                    </Link>
+                    <Link href="/sports" className="hover:text-primary transition-colors">
+                        Sports
+                    </Link>
+                    <Link href="/entertainment" className="hover:text-primary transition-colors">
+                        Entertainment
+                    </Link>
+                    <Link href="/world" className="hover:text-primary transition-colors">
+                        World
+                    </Link>
+                </div>
+
                 {/* Search */}
-                <button className="text-muted-foreground hover:text-foreground transition-colors">
-                    <Search className="h-5 w-5" />
-                    <span className="sr-only">Search</span>
-                </button>
+                <SearchBar />
             </div>
         </nav>
     );

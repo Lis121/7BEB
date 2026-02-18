@@ -1,72 +1,73 @@
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { VideoCard } from "@/components/video-card";
+import { WatchCard } from "@/components/WatchCard";
 import { notFound } from "next/navigation";
+import { fetchAllPages, getYoutubeVideoId, getBestYoutubeThumbnail } from "@/lib/alstra";
+import { categorizePage } from "@/lib/classification";
 
 
 
 // Mock Data (In a real app, this would come from a database)
-const CATEGORY_VIDEOS = [
-    {
-        path: "/videos/tech-startup-boom",
-        title: "The Next Big Thing: Silicon Valley's Newest Unicorns",
-        thumbnail: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1000&auto=format&fit=crop",
-        duration: "4:20",
-        category: "Tech",
-        timestamp: "2 hours ago",
-        slug: "tech-startup-boom"
-    },
-    {
-        path: "/videos/senate-hearing",
-        title: "Key Takeaways from Today's Senate Hearing",
-        thumbnail: "https://images.unsplash.com/photo-1555848962-6e79363ec58f?q=80&w=1000&auto=format&fit=crop",
-        duration: "12:00",
-        category: "Politics",
-        timestamp: "1 day ago",
-        slug: "senate-hearing"
-    },
-    // Add more mock data as needed to populate the grid
-    {
-        path: "/videos/ai-revolution",
-        title: "How AI is Reshaping Modern Medicine",
-        thumbnail: "https://images.unsplash.com/photo-1531746790731-bcad0f448c63?q=80&w=1000&auto=format&fit=crop",
-        duration: "15:30",
-        category: "Tech",
-        timestamp: "5 hours ago",
-        slug: "ai-revolution"
-    },
-    {
-        path: "/videos/climate-summit",
-        title: "Global Leaders Reach Historic Climate Deal",
-        thumbnail: "https://images.unsplash.com/photo-1569163139500-66446e292676?q=80&w=1000&auto=format&fit=crop",
-        duration: "9:45",
-        category: "Politics",
-        timestamp: "3 hours ago",
-        slug: "climate-summit"
-    }
-];
+
 
 export function generateStaticParams() {
     return [
         { category: "politics" },
         { category: "tech" },
         { category: "business" },
+        { category: "science" },
+        { category: "health" },
+        { category: "sports" },
         { category: "entertainment" },
+        { category: "world" },
     ];
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
     const { category } = await params;
+    const title = category.charAt(0).toUpperCase() + category.slice(1);
 
-    // Simple filter for mock purposes
-    // In production, you'd fetch based on category
-    const videos = CATEGORY_VIDEOS.filter(v =>
-        v.category.toLowerCase() === category.toLowerCase() ||
-        // Allow some cross-pollination for demo if exact match fails
-        true
+    // Fetch all pages and filter by category
+    const allPages = await fetchAllPages();
+    const filteredPages = allPages.filter(page =>
+        categorizePage(page).toLowerCase() === category.toLowerCase()
     );
 
-    const title = category.charAt(0).toUpperCase() + category.slice(1);
+    // Limit to 20 for now and fetch details/thumbnails
+    const topPages = filteredPages.slice(0, 20);
+
+    const videos = await Promise.all(topPages.map(async (page) => {
+        try {
+            const res = await fetch(`https://www.alstras.com/api/public/content?projectId=b17364ef-337e-4134-9b5e-2ab36c97e022&slug=${page.slug}`, {
+                next: { revalidate: 3600 }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const videoId = getYoutubeVideoId(data.contentHtml || "");
+                const thumbnail = videoId ? getBestYoutubeThumbnail(videoId) : "https://placehold.co/600x400/222/333?text=Video";
+
+                return {
+                    slug: page.slug,
+                    title: page.title,
+                    thumbnail,
+                    category: title,
+                    date: "",
+                    url: `/watch/${page.slug}`
+                };
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        return {
+            slug: page.slug,
+            title: page.title,
+            thumbnail: "https://placehold.co/600x400/222/333?text=Video",
+            category: title,
+            date: "",
+            url: `/watch/${page.slug}`
+        };
+    }));
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -78,11 +79,17 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
                     <p className="text-muted-foreground">Latest updates and video coverage for {title}.</p>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {videos.map((video, idx) => (
-                        <VideoCard key={idx} {...video} />
-                    ))}
-                </div>
+                {videos.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {videos.map((video, idx) => (
+                            <WatchCard key={idx} {...video} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-20">
+                        <p className="text-muted-foreground">No videos found in this category.</p>
+                    </div>
+                )}
             </main>
 
             <Footer />

@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { WatchCard } from "@/components/WatchCard";
+import { VideoFeed } from "@/components/video-feed";
 import { fetchWatchPagesWithThumbnails } from "@/lib/alstra";
 
 export const runtime = 'edge';
@@ -20,18 +21,7 @@ export default async function Home() {
             <h2 className="text-3xl font-bold tracking-tight uppercase">Latest</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {watchPages.map((page) => (
-              <WatchCard
-                key={page.url}
-                title={page.title}
-                thumbnail={page.thumbnail}
-                category={page.category}
-                date={page.date}
-                slug={page.slug}
-              />
-            ))}
-          </div>
+          <VideoFeed initialVideos={watchPages} />
         </section>
       </main>
 
