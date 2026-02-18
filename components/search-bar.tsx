@@ -70,7 +70,15 @@ export function SearchBar() {
             </form>
 
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    if (isOpen && query.trim()) {
+                        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+                        setIsOpen(false);
+                        setQuery("");
+                    } else {
+                        setIsOpen(!isOpen);
+                    }
+                }}
                 className={cn(
                     "relative z-10 p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/50",
                     isOpen && "bg-muted/50 text-foreground"
