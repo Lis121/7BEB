@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { WatchCard } from "@/components/WatchCard";
+import { SearchResults } from "@/components/search-results";
 import { searchPages } from "@/lib/alstra";
 
 export const runtime = 'edge';
@@ -14,7 +14,7 @@ export default async function SearchPage({
     const { q } = await searchParams;
     const query = q?.toLowerCase() || "";
 
-    const results = await searchPages(query);
+    const { results, hasMore, totalMatches } = await searchPages(query, 8, 0);
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -27,24 +27,17 @@ export default async function SearchPage({
                     </h1>
                     <p className="text-muted-foreground">
                         {query
-                            ? `Showing results for "${q}"`
+                            ? `Showing results for "${q}" (${totalMatches} matches)`
                             : "Please enter a search term"}
                     </p>
                 </header>
 
-                {results.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {results.map((video, idx) => (
-                            <WatchCard key={idx} {...video} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-20">
-                        <p className="text-muted-foreground text-lg">
-                            No results found for "{q}"
-                        </p>
-                    </div>
-                )}
+                <SearchResults
+                    initialResults={results}
+                    query={query}
+                    hasMore={hasMore}
+                    totalMatches={totalMatches}
+                />
             </main>
 
             <Footer />

@@ -40,7 +40,6 @@ const PLACEHOLDER = "https://placehold.co/600x400/222/333?text=Video";
 
 /**
  * Fetch ALL pages from the API (paginated).
- * Useful for building search indexes or categorization.
  */
 export async function fetchAllPages(): Promise<AlstraPage[]> {
     let allPages: AlstraPage[] = [];
@@ -97,7 +96,6 @@ async function hydratePagesWithThumbnails(pages: AlstraPage[]): Promise<WatchPag
                     ? getBestYoutubeThumbnail(videoId)
                     : PLACEHOLDER;
 
-                // Pass updatedAt as date
                 return buildResult(page, thumbnail, pageData.title, pageData.updatedAt);
             } catch (err) {
                 console.error(`Content fetch failed for ${page.slug}:`, err);
@@ -110,27 +108,22 @@ async function hydratePagesWithThumbnails(pages: AlstraPage[]): Promise<WatchPag
 
 /**
  * Fetch "Trending" pages.
- * Since we don't have real view counts, we'll shuffle the list to show a variety.
  */
 export async function fetchTrendingPages(count: number): Promise<WatchPageWithThumbnail[]> {
     const allPages = await fetchAllPages();
     if (allPages.length === 0) return [];
 
-    // Shuffle for "Trending" simulation
     const selected = shuffleArray(allPages).slice(0, count);
     return hydratePagesWithThumbnails(selected);
 }
 
 /**
  * Fetch "Latest" pages.
- * Assuming the API returns pages in creation order (oldest first),
- * we reverse the list to show the newest ones.
  */
 export async function fetchLatestPages(count: number): Promise<WatchPageWithThumbnail[]> {
     const allPages = await fetchAllPages();
     if (allPages.length === 0) return [];
 
-    // Reverse to get newest first
     const reversed = [...allPages].reverse();
     const selected = reversed.slice(0, count);
     return hydratePagesWithThumbnails(selected);
@@ -142,28 +135,24 @@ export async function fetchLatestPages(count: number): Promise<WatchPageWithThum
 export async function fetchCategoryPages(category: string, limit: number, offset: number = 0): Promise<WatchPageWithThumbnail[]> {
     const allPages = await fetchAllPages();
 
-    // Filter by category
     const filtered = allPages.filter(page =>
         categorizePage(page).toLowerCase() === category.toLowerCase()
     );
 
-    // Sort by latest (reverse chronological assumed from API)
     const reversed = [...filtered].reverse();
-
-    // Slice for pagination
     const selected = reversed.slice(offset, offset + limit);
     return hydratePagesWithThumbnails(selected);
 }
 
 /**
  * Search pages using Fuse.js for fuzzy matching.
- * Returns lightweight results (no per-page content fetching) to avoid Edge/Cloudflare timeout.
+ * Returns a paginated batch with thumbnails.
  */
-export async function searchPages(query: string, limit: number = 20): Promise<WatchPageWithThumbnail[]> {
-    if (!query) return [];
+export async function searchPages(query: string, limit: number = 8, offset: number = 0): Promise<{ results: WatchPageWithThumbnail[]; hasMore: boolean; totalMatches: number }> {
+    if (!query) return { results: [], hasMore: false, totalMatches: 0 };
 
     const allPages = await fetchAllPages();
-    if (allPages.length === 0) return [];
+    if (allPages.length === 0) return { results: [], hasMore: false, totalMatches: 0 };
 
     const fuse = new Fuse(allPages, {
         keys: [
@@ -175,12 +164,15 @@ export async function searchPages(query: string, limit: number = 20): Promise<Wa
         minMatchCharLength: 2,
     });
 
-    const results = fuse.search(query);
-    const topResults = results.slice(0, limit).map(result => result.item);
+    const allResults = fuse.search(query);
+    const totalMatches = allResults.length;
+    const batch = allResults.slice(offset, offset + limit).map(r => r.item);
+    const hasMore = offset + limit < totalMatches;
 
-    // Build results directly without expensive per-page content fetching.
-    // This avoids Cloudflare Workers timeout on the live site.
-    return topResults.map(page => buildResult(page, PLACEHOLDER));
+    // Hydrate only the small batch (8 items) to stay within Edge timeout
+    const hydrated = await hydratePagesWithThumbnails(batch);
+
+    return { results: hydrated, hasMore, totalMatches };
 }
 
 /**
@@ -199,10 +191,8 @@ function buildResult(
     apiDate?: string
 ): WatchPageWithThumbnail {
     const slugParts = page.slug.split("/").filter(Boolean);
-    const rawCategory = slugParts.length > 0 ? slugParts[0] : "General";
     const category = categorizePage(page);
 
-    // title from the last slug segment as fallback
     const lastSegment = slugParts[slugParts.length - 1] || "";
     const fallbackTitle = lastSegment
         .split("-")
