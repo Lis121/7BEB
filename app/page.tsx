@@ -3,7 +3,6 @@ import { Footer } from "@/components/footer";
 import { WatchCard } from "@/components/WatchCard";
 import { VideoFeed } from "@/components/video-feed";
 import { fetchTrendingPages, fetchLatestPages } from "@/lib/alstra";
-import { Hero } from "@/components/hero";
 
 export const revalidate = 60; // Revalidate every minute
 
@@ -14,7 +13,6 @@ export default async function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <Hero />
 
       <main className="flex-grow container mx-auto px-4 py-12 space-y-16">
         {/* Trending Section */}
