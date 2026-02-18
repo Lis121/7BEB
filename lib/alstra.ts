@@ -131,8 +131,6 @@ export async function fetchLatestPages(count: number): Promise<WatchPageWithThum
     if (allPages.length === 0) return [];
 
     // Reverse to get newest first
-    // Note: If API order is not chronological, this might need adjustment.
-    // However, usually DBs return in insertion order.
     const reversed = [...allPages].reverse();
     const selected = reversed.slice(0, count);
     return hydratePagesWithThumbnails(selected);
@@ -159,11 +157,13 @@ export async function fetchCategoryPages(category: string, limit: number, offset
 
 /**
  * Search pages using Fuse.js for fuzzy matching.
+ * Returns lightweight results (no per-page content fetching) to avoid Edge/Cloudflare timeout.
  */
 export async function searchPages(query: string, limit: number = 20): Promise<WatchPageWithThumbnail[]> {
-    const allPages = await fetchAllPages();
-
     if (!query) return [];
+
+    const allPages = await fetchAllPages();
+    if (allPages.length === 0) return [];
 
     const fuse = new Fuse(allPages, {
         keys: [
@@ -171,14 +171,16 @@ export async function searchPages(query: string, limit: number = 20): Promise<Wa
             { name: 'slug', weight: 0.3 }
         ],
         includeScore: true,
-        threshold: 0.4, // 0.0 = exact match, 1.0 = match anything. 0.4 is good for typos.
+        threshold: 0.4,
         minMatchCharLength: 2,
     });
 
     const results = fuse.search(query);
     const topResults = results.slice(0, limit).map(result => result.item);
 
-    return hydratePagesWithThumbnails(topResults);
+    // Build results directly without expensive per-page content fetching.
+    // This avoids Cloudflare Workers timeout on the live site.
+    return topResults.map(page => buildResult(page, PLACEHOLDER));
 }
 
 /**
@@ -194,16 +196,10 @@ function buildResult(
     page: AlstraPage,
     thumbnail: string,
     apiTitle?: string,
-    apiDate?: string // New optional parameter
+    apiDate?: string
 ): WatchPageWithThumbnail {
     const slugParts = page.slug.split("/").filter(Boolean);
-    // category is the first segment, e.g. robert-duvall/some-page → Robert Duvall
     const rawCategory = slugParts.length > 0 ? slugParts[0] : "General";
-
-    // Categorization logic from classification.ts isn't imported here to avoid circular dep,
-    // but the categorizePage function is better. 
-    // For now, let's just capitalize properly/use classification logic if we want.
-    // Actually we can use categorizePage here now!
     const category = categorizePage(page);
 
     // title from the last slug segment as fallback
@@ -219,6 +215,6 @@ function buildResult(
         title: apiTitle || page.title || fallbackTitle,
         thumbnail,
         category,
-        date: apiDate || "", // Use provided date or empty string
+        date: apiDate || "",
     };
 }
