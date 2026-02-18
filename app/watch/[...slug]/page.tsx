@@ -56,7 +56,19 @@ export default async function PseoPage(props: Props) {
         <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-grow container mx-auto py-12 px-4 max-w-4xl">
-                <h1 className="text-4xl md:text-5xl font-bold mb-8 dark:text-white">{data.title}</h1>
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 dark:text-white">{data.title}</h1>
+
+                {data.updatedAt && (
+                    <div className="flex items-center text-muted-foreground mb-8">
+                        <span className="text-sm font-medium">
+                            Published: {new Date(data.updatedAt).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            })}
+                        </span>
+                    </div>
+                )}
 
                 <div
                     className="pseo-content prose prose-lg dark:prose-invert max-w-none"

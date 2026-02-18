@@ -1,3 +1,6 @@
+import { AlstraPage, WatchPageWithThumbnail } from "./types";
+import { categorizePage } from "./classification";
+
 const SAAS_API_URL = "https://www.alstras.com";
 const PROJECT_ID = "b17364ef-337e-4134-9b5e-2ab36c97e022";
 
@@ -20,23 +23,6 @@ export function getYoutubeVideoId(html: string): string | null {
 export function getBestYoutubeThumbnail(videoId: string): string {
     return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 }
-
-// --- Types ---
-
-export type AlstraPage = {
-    slug: string;
-    title: string;
-    type: string;
-};
-
-export type WatchPageWithThumbnail = {
-    slug: string;
-    url: string;
-    title: string;
-    thumbnail: string;
-    category: string;
-    date: string;
-};
 
 // --- Helpers ---
 
@@ -110,7 +96,8 @@ async function hydratePagesWithThumbnails(pages: AlstraPage[]): Promise<WatchPag
                     ? getBestYoutubeThumbnail(videoId)
                     : PLACEHOLDER;
 
-                return buildResult(page, thumbnail, pageData.title);
+                // Pass updatedAt as date
+                return buildResult(page, thumbnail, pageData.title, pageData.updatedAt);
             } catch (err) {
                 console.error(`Content fetch failed for ${page.slug}:`, err);
                 return buildResult(page, PLACEHOLDER);
@@ -151,6 +138,25 @@ export async function fetchLatestPages(count: number): Promise<WatchPageWithThum
 }
 
 /**
+ * Fetch pages for a specific category with offset and limit.
+ */
+export async function fetchCategoryPages(category: string, limit: number, offset: number = 0): Promise<WatchPageWithThumbnail[]> {
+    const allPages = await fetchAllPages();
+
+    // Filter by category
+    const filtered = allPages.filter(page =>
+        categorizePage(page).toLowerCase() === category.toLowerCase()
+    );
+
+    // Sort by latest (reverse chronological assumed from API)
+    const reversed = [...filtered].reverse();
+
+    // Slice for pagination
+    const selected = reversed.slice(offset, offset + limit);
+    return hydratePagesWithThumbnails(selected);
+}
+
+/**
  * @deprecated Use fetchTrendingPages or fetchLatestPages instead.
  */
 export async function fetchWatchPagesWithThumbnails(
@@ -162,7 +168,8 @@ export async function fetchWatchPagesWithThumbnails(
 function buildResult(
     page: AlstraPage,
     thumbnail: string,
-    apiTitle?: string
+    apiTitle?: string,
+    apiDate?: string // New optional parameter
 ): WatchPageWithThumbnail {
     const slugParts = page.slug.split("/").filter(Boolean);
     // category is the first segment, e.g. robert-duvall/some-page → Robert Duvall
@@ -170,11 +177,9 @@ function buildResult(
 
     // Categorization logic from classification.ts isn't imported here to avoid circular dep,
     // but the categorizePage function is better. 
-    // For now, let's just capitalize properly.
-    const category = rawCategory
-        .split("-")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
+    // For now, let's just capitalize properly/use classification logic if we want.
+    // Actually we can use categorizePage here now!
+    const category = categorizePage(page);
 
     // title from the last slug segment as fallback
     const lastSegment = slugParts[slugParts.length - 1] || "";
@@ -189,6 +194,15 @@ function buildResult(
         title: apiTitle || page.title || fallbackTitle,
         thumbnail,
         category,
-        date: "",
+        date: apiDate || "", // Use provided date or empty string
     };
 }
+// Wait, buildResult doesn't have access to pageData.updatedAt unless passed.
+// hydratePagesWithThumbnails passes pageData.title.
+// I need to update buildResult signature to accept date/timestamp.
+
+// Or I can just pass it as 'date'.
+// In hydratePagesWithThumbnails:
+// const pageData = await contentRes.json();
+// ...
+// return buildResult(page, thumbnail, pageData.title, pageData.updatedAt);

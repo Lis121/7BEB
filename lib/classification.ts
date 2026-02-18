@@ -1,4 +1,4 @@
-import { AlstraPage } from "./alstra";
+import { AlstraPage } from "./types";
 
 export const CATEGORIES = [
     "Politics",
