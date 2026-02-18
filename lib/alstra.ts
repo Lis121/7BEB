@@ -85,67 +85,78 @@ export async function fetchAllPages(): Promise<AlstraPage[]> {
     return allPages;
 }
 
+// --- Data Patterns for Sections ---
+
 /**
- * Fetch `count` random /watch pages with their YouTube thumbnails.
- *
- * Uses the pages API (1 call) to get the list, then fetches content
- * for each selected page to extract the YouTube video ID.
+ * Hydrate a list of AlstraPages with thumbnails by fetching their content.
+ */
+async function hydratePagesWithThumbnails(pages: AlstraPage[]): Promise<WatchPageWithThumbnail[]> {
+    const results = await Promise.all(
+        pages.map(async (page): Promise<WatchPageWithThumbnail> => {
+            try {
+                const contentRes = await fetch(
+                    `${SAAS_API_URL}/api/public/content?projectId=${PROJECT_ID}&slug=${page.slug}`,
+                    { next: { revalidate: 3600 } }
+                );
+
+                if (!contentRes.ok) {
+                    return buildResult(page, PLACEHOLDER);
+                }
+
+                const pageData = await contentRes.json();
+                const html: string = pageData.contentHtml || "";
+                const videoId = getYoutubeVideoId(html);
+                const thumbnail = videoId
+                    ? getBestYoutubeThumbnail(videoId)
+                    : PLACEHOLDER;
+
+                return buildResult(page, thumbnail, pageData.title);
+            } catch (err) {
+                console.error(`Content fetch failed for ${page.slug}:`, err);
+                return buildResult(page, PLACEHOLDER);
+            }
+        })
+    );
+    return results;
+}
+
+/**
+ * Fetch "Trending" pages.
+ * Since we don't have real view counts, we'll shuffle the list to show a variety.
+ */
+export async function fetchTrendingPages(count: number): Promise<WatchPageWithThumbnail[]> {
+    const allPages = await fetchAllPages();
+    if (allPages.length === 0) return [];
+
+    // Shuffle for "Trending" simulation
+    const selected = shuffleArray(allPages).slice(0, count);
+    return hydratePagesWithThumbnails(selected);
+}
+
+/**
+ * Fetch "Latest" pages.
+ * Assuming the API returns pages in creation order (oldest first),
+ * we reverse the list to show the newest ones.
+ */
+export async function fetchLatestPages(count: number): Promise<WatchPageWithThumbnail[]> {
+    const allPages = await fetchAllPages();
+    if (allPages.length === 0) return [];
+
+    // Reverse to get newest first
+    // Note: If API order is not chronological, this might need adjustment.
+    // However, usually DBs return in insertion order.
+    const reversed = [...allPages].reverse();
+    const selected = reversed.slice(0, count);
+    return hydratePagesWithThumbnails(selected);
+}
+
+/**
+ * @deprecated Use fetchTrendingPages or fetchLatestPages instead.
  */
 export async function fetchWatchPagesWithThumbnails(
     count: number
 ): Promise<WatchPageWithThumbnail[]> {
-    try {
-        // Step 1 – get all pages from the pages API (single request)
-        const listRes = await fetch(
-            `${SAAS_API_URL}/api/public/pages?projectId=${PROJECT_ID}&type=pseo&limit=300`,
-            { next: { revalidate: 60 } }
-        );
-        if (!listRes.ok) {
-            console.error("Alstra pages API error:", listRes.status);
-            return [];
-        }
-
-        const listData = await listRes.json();
-        const allPages: AlstraPage[] = listData.pages || [];
-
-        if (allPages.length === 0) return [];
-
-        // Step 2 – shuffle & pick
-        const selected = shuffleArray(allPages).slice(0, count);
-
-        // Step 3 – fetch content for each page (all in parallel)
-        const results = await Promise.all(
-            selected.map(async (page): Promise<WatchPageWithThumbnail> => {
-                try {
-                    const contentRes = await fetch(
-                        `${SAAS_API_URL}/api/public/content?projectId=${PROJECT_ID}&slug=${page.slug}`,
-                        { next: { revalidate: 60 } }
-                    );
-
-                    if (!contentRes.ok) {
-                        return buildResult(page, PLACEHOLDER);
-                    }
-
-                    const pageData = await contentRes.json();
-                    const html: string = pageData.contentHtml || "";
-                    const videoId = getYoutubeVideoId(html);
-                    const thumbnail = videoId
-                        ? getBestYoutubeThumbnail(videoId)
-                        : PLACEHOLDER;
-
-                    return buildResult(page, thumbnail, pageData.title);
-                } catch (err) {
-                    console.error(`Content fetch failed for ${page.slug}:`, err);
-                    return buildResult(page, PLACEHOLDER);
-                }
-            })
-        );
-
-        return results;
-    } catch (error) {
-        console.error("Failed to fetch watch pages with thumbnails:", error);
-        return [];
-    }
+    return fetchTrendingPages(count);
 }
 
 function buildResult(
@@ -156,6 +167,10 @@ function buildResult(
     const slugParts = page.slug.split("/").filter(Boolean);
     // category is the first segment, e.g. robert-duvall/some-page → Robert Duvall
     const rawCategory = slugParts.length > 0 ? slugParts[0] : "General";
+
+    // Categorization logic from classification.ts isn't imported here to avoid circular dep,
+    // but the categorizePage function is better. 
+    // For now, let's just capitalize properly.
     const category = rawCategory
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))

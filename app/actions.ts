@@ -1,7 +1,8 @@
 "use server";
 
-import { fetchWatchPagesWithThumbnails, WatchPageWithThumbnail } from "@/lib/alstra";
+import { fetchTrendingPages } from "@/lib/alstra";
 
-export async function getMoreVideos(count: number = 20): Promise<WatchPageWithThumbnail[]> {
-    return await fetchWatchPagesWithThumbnails(count);
+export async function getMoreVideos(count: number = 8) {
+    // For "Load More", we'll fetch random trending/other pages to keep it feeling fresh
+    return await fetchTrendingPages(count);
 }
