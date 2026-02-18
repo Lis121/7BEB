@@ -5,7 +5,46 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { categorizePage } from "@/lib/classification";
 
-// ... (SAAS_API_URL, PROJECT_ID, fetchPseoPage, generateMetadata remain unchanged)
+// Config - This interacts with your SaaS Platform (Do NOT change to localhost)
+const SAAS_API_URL = "https://www.alstras.com";
+const PROJECT_ID = "b17364ef-337e-4134-9b5e-2ab36c97e022";
+
+export const runtime = 'edge';
+
+type Props = {
+    params: Promise<{ slug: string[] }>;
+};
+
+async function fetchPseoPage(slug: string) {
+    try {
+        // Added &include=related for Smart Linking
+        const res = await fetch(
+            `${SAAS_API_URL}/api/public/content?projectId=${PROJECT_ID}&slug=${slug}&include=related`,
+            {
+                next: { revalidate: 3600 },
+            },
+        );
+
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (error) {
+        console.error("pSEO Fetch Error:", error);
+        return null;
+    }
+}
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const params = await props.params;
+    const slug = params.slug.join("/");
+    const data = await fetchPseoPage(slug);
+
+    if (!data) return {};
+
+    return {
+        title: data.title,
+        description: data.excerpt || data.title,
+    };
+}
 
 export default async function PseoPage(props: Props) {
     const params = await props.params;
