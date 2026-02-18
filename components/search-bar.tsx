@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ export function SearchBar() {
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (isOpen && inputRef.current) {
@@ -32,13 +33,24 @@ export function SearchBar() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
+    const doSearch = () => {
         if (query.trim()) {
-            router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+            const url = `/search?q=${encodeURIComponent(query.trim())}`;
+            // Use router.replace when already on /search to force a fresh server fetch
+            if (pathname === "/search") {
+                router.replace(url);
+                router.refresh();
+            } else {
+                router.push(url);
+            }
             setIsOpen(false);
             setQuery("");
         }
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        doSearch();
     };
 
     return (
@@ -72,9 +84,7 @@ export function SearchBar() {
             <button
                 onClick={() => {
                     if (isOpen && query.trim()) {
-                        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-                        setIsOpen(false);
-                        setQuery("");
+                        doSearch();
                     } else {
                         setIsOpen(!isOpen);
                     }
