@@ -172,7 +172,7 @@ export async function searchPages(query: string, limit: number = 20): Promise<Wa
         ],
         includeScore: true,
         threshold: 0.4, // 0.0 = exact match, 1.0 = match anything. 0.4 is good for typos.
-        minMatchCharLength: 3,
+        minMatchCharLength: 2,
     });
 
     const results = fuse.search(query);
