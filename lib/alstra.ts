@@ -37,20 +37,11 @@ function shuffleArray<T>(array: T[]): T[] {
 
 const PLACEHOLDER = "https://placehold.co/600x400/222/333?text=Video";
 
-// In-memory cache for Edge runtime to avoid hitting API limits
-let globalPagesCache: { data: AlstraPage[]; timestamp: number } | null = null;
-const CACHE_TTL = 3600 * 1000; // 1 hour
-
 /**
  * Fetch ALL pages from the API (paginated).
  * Useful for building search indexes or categorization.
  */
 export async function fetchAllPages(): Promise<AlstraPage[]> {
-    // Check in-memory cache first
-    if (globalPagesCache && Date.now() - globalPagesCache.timestamp < CACHE_TTL) {
-        return globalPagesCache.data;
-    }
-
     let allPages: AlstraPage[] = [];
     let page = 1;
 
@@ -73,18 +64,8 @@ export async function fetchAllPages(): Promise<AlstraPage[]> {
             if (pages.length < 1000) break;
             page++;
         }
-
-        // Update cache if we got results
-        if (allPages.length > 0) {
-            globalPagesCache = {
-                data: allPages,
-                timestamp: Date.now()
-            };
-        }
     } catch (error) {
         console.error("Failed to fetch all pages:", error);
-        // Fallback to cache if available even if expired, to avoid breaking
-        if (globalPagesCache) return globalPagesCache.data;
     }
 
     return allPages;
